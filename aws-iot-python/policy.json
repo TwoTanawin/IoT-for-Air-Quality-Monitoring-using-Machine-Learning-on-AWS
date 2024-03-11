@@ -1,0 +1,25 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": "iot:Connect",
+        "Resource": "arn:aws:iot:ap-southeast-1:730335526346:client/test_esp_data"
+      },
+      {
+        "Effect": "Allow",
+        "Action": "iot:Publish",
+        "Resource": "arn:aws:iot:ap-southeast-1:730335526346:topic/esp32/pub"
+      },
+      {
+        "Effect": "Allow",
+        "Action": "iot:Subscribe",
+        "Resource": "arn:aws:iot:ap-southeast-1:730335526346:topicfilter/esp32/sub"
+      },
+      {
+        "Effect": "Allow",
+        "Action": "iot:Receive",
+        "Resource": "arn:aws:iot:ap-southeast-1:730335526346:topic/esp32/sub"
+      }
+    ]
+  }
