@@ -59,7 +59,21 @@ void connectAWS()
 void publishMessage()
 {
   StaticJsonDocument<200> doc;
-  doc["time"] = millis();
+  // Get current time in milliseconds since the program started
+  unsigned long currentTimeMillis = millis();
+
+  // Convert milliseconds to hours, minutes, and seconds
+  int hours = (currentTimeMillis / 3600000) % 24; // 1 hour = 3600000 milliseconds
+  int minutes = (currentTimeMillis / 60000) % 60;   // 1 minute = 60000 milliseconds
+  int seconds = (currentTimeMillis / 1000) % 60;    // 1 second = 1000 milliseconds
+
+  // Format the time as a string in "%H:%M:%S" format
+  char formattedTime[9]; // HH:MM:SS + null terminator
+  sprintf(formattedTime, "%02d:%02d:%02d", hours, minutes, seconds);
+
+  // Update the time in your document
+  doc["time"] = formattedTime;
+
   doc["random_value"] = random(0, 100); // Random value generation
   char jsonBuffer[512];
   serializeJson(doc, jsonBuffer); // print to client

@@ -1,6 +1,7 @@
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import json
 from datetime import datetime
+import time
 
 # AWS IoT Core configuration
 endpoint = "a1vay9ecm5rwj1-ats.iot.ap-southeast-1.amazonaws.com"
@@ -17,20 +18,26 @@ mqtt_client.configureCredentials(root_ca_path, private_key_path, certificate_pat
 # Connect to AWS IoT Core
 mqtt_client.connect()
 
-now = datetime.now()
-current_time = now.strftime("%H:%M:%S")
-# JSON data to send
-data = {
-    "time": f"{current_time}",
-    "random_value": "969696",
-}
+while True:
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    
+    # JSON data to send
+    data = {
+        "time": f"{current_time}",
+        "random_value": "123456789",
+    }
 
-# Convert data to JSON string
-payload = json.dumps(data)
+    # Convert data to JSON string
+    payload = json.dumps(data)
 
-# Publish JSON data to a specific IoT topic
-topic = "esp32/pub"
-mqtt_client.publish(topic, payload, 1)
+    # Publish JSON data to a specific IoT topic
+    topic = "esp32/pub"
+    mqtt_client.publish(topic, payload, 1)
 
-# Disconnect from AWS IoT Core
-mqtt_client.disconnect()
+    # Wait for 1 second
+    time.sleep(1)
+    print("Done")
+    
+    # Disconnect from AWS IoT Core (This won't be reached in an infinite loop)
+    # mqtt_client.disconnect()
