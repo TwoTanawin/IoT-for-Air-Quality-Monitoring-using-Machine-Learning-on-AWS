@@ -8,6 +8,19 @@
     <h1>Age : {{ age }}</h1>
     <p>Address : <span v-html="address"></span></p>
     <p>Social : <a :href="social" target="_blank">Dune Part Two</a></p>
+    <p>Hobbies</p>
+    <ul>
+      <li>{{ hobby[0] }}</li>
+      <li>{{ hobby[1] }}</li>
+      <li>{{ hobby[2] }}</li>
+    </ul>
+    <p>General Data :</p>
+    <ul>
+      <li>Gender : {{ general.gender }}</li>
+      <li>Weight : {{ general.weigh }} Kg</li>
+      <li>Height : {{ general.height }} Cm</li>
+
+    </ul>
   </section>
 </template>
 
@@ -28,6 +41,8 @@ export default {
       picture:"https://variety.com/wp-content/uploads/2020/09/dune-warner-bros-e1600210676962.jpg",
       size:500,
       social:"https://en.wikipedia.org/wiki/Dune:_Part_Two",
+      hobby:["Ride Worms", "Attack the Impire", "Procuce Sprite"],
+      general:{gender:"Male", weigh:65, height:185, status:false}
     }
   },
   methods:{
