@@ -5,6 +5,10 @@
 #include "WiFi.h"
 #include <Arduino.h>
 #include "PMS.h"
+#include <ctime>
+// #include <TridentTD_LineNotify.h>
+
+// #define LINE_TOKEN "1A8i7VgRtTaik6xL8PSSFGlT1FvBjBLy5IQDhnYhEO3"
 
 // The MQTT topics that this device should publish/subscribe
 #define AWS_IOT_PUBLISH_TOPIC "esp32/pub"
@@ -16,11 +20,45 @@ MQTTClient client = MQTTClient(256);
 // Declare the messageHandler function before it's used
 void messageHandler(String &topic, String &payload);
 
+const char* ntpServer = "pool.ntp.org";
+const long  gmtOffset_sec = 25200;
+const int   daylightOffset_sec = 0;
+
+#define MAX_TIME_STRING_LENGTH 80 // Adjust the size as per your requirement
+
+String station_number = "1";
+
 PMS pms(Serial);
 PMS::DATA data;
 
 unsigned long previousMillis = 0; // Variable to store the last time the interval was updated
-const long interval = 1;          // Interval in milliseconds
+const long interval = 1000;          // Interval in milliseconds
+
+void printLocalTime()
+{
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}
+
+String getLocalTimeForDB() {
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time");
+    return "";
+  }
+
+  char timestamp[20];  // Assuming the timestamp format is YYYY-MM-DD HH:MM:SS
+  snprintf(timestamp, sizeof(timestamp), "%04d-%02d-%02d %02d:%02d:%02d",
+           timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
+           timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+
+  return String(timestamp);
+}
+
 
 void connectAWS()
 {
@@ -34,6 +72,8 @@ void connectAWS()
     delay(500);
     Serial.print(".");
   }
+
+
 
   // Configure WiFiClientSecure to use the AWS IoT device credentials
   net.setCACert(AWS_CERT_CA);
@@ -54,6 +94,12 @@ void connectAWS()
     delay(100);
   }
 
+    //init and get the time
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  printLocalTime();
+
+  
+
   if (!client.connected())
   {
     Serial.println("AWS IoT Timeout!");
@@ -63,13 +109,31 @@ void connectAWS()
   // Subscribe to a topic
   client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
 
-  Serial.println("AWS IoT Connected!");
+
+
 }
+
+
+
+// void printLocalTime2()
+// {
+//   struct tm timeinfo;
+//   if (!getLocalTime(&timeinfo)) {
+//     Serial.println("Failed to obtain time");
+//     return;
+//   }
+
+//   char timeString[MAX_TIME_STRING_LENGTH];
+//   strftime(timeString, MAX_TIME_STRING_LENGTH, "%A, %B %d %Y %H:%M:%S", &timeinfo);
+//   Serial.println(timeString);
+// }
 
 void publishMessage()
 {
   int pm1, pm25, pm10;
   StaticJsonDocument<200> doc;
+
+  String timestamp = getLocalTimeForDB();
 
   if (pms.read(data))
   {
@@ -77,6 +141,9 @@ void publishMessage()
     pm1 = data.PM_AE_UG_1_0;
     pm25 = data.PM_AE_UG_2_5;
     pm10 = data.PM_AE_UG_10_0;
+
+    doc["timestamp"] = timestamp;
+    doc["station_number"] = "1";
     doc["pm1"] = pm1; // Random value generation
     doc["pm25"] = pm25;
     doc["pm10"] = pm10;
@@ -116,6 +183,7 @@ void testPMS()
 void setup()
 {
   Serial.begin(9600);
+  
   connectAWS();
 }
 
@@ -131,6 +199,11 @@ void loop()
     // testPMS();
     publishMessage();
     client.loop();
+
+    // printLocalTime();
+    // String timestamp = getLocalTimeForDB();
+    // Serial.println("Timestamp for database: " + timestamp);
+    // printLocalTime2();
   }
 
   // delay(100);
