@@ -34,6 +34,10 @@ PMS::DATA data;
 unsigned long previousMillis = 0; // Variable to store the last time the interval was updated
 const long interval = 1000;          // Interval in milliseconds
 
+unsigned long previousResetMillis = 0;  // Variable to store the last time the reset was done
+const long resetInterval = 1800000;       // Interval to reset (in milliseconds)
+
+
 void printLocalTime()
 {
   struct tm timeinfo;
@@ -94,10 +98,6 @@ void connectAWS()
     delay(100);
   }
 
-    //init and get the time
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  printLocalTime();
-
   
 
   if (!client.connected())
@@ -109,24 +109,12 @@ void connectAWS()
   // Subscribe to a topic
   client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
 
+  Serial.println("AWS IoT Connected!");
 
-
+  //init and get the time
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  printLocalTime();
 }
-
-
-
-// void printLocalTime2()
-// {
-//   struct tm timeinfo;
-//   if (!getLocalTime(&timeinfo)) {
-//     Serial.println("Failed to obtain time");
-//     return;
-//   }
-
-//   char timeString[MAX_TIME_STRING_LENGTH];
-//   strftime(timeString, MAX_TIME_STRING_LENGTH, "%A, %B %d %Y %H:%M:%S", &timeinfo);
-//   Serial.println(timeString);
-// }
 
 void publishMessage()
 {
@@ -160,9 +148,6 @@ void messageHandler(String &topic, String &payload)
 {
   Serial.println("incoming: " + topic + " - " + payload);
 
-  //  StaticJsonDocument<200> doc;
-  //  deserializeJson(doc, payload);
-  //  const char* message = doc["message"];
 }
 
 void testPMS()
@@ -189,22 +174,23 @@ void setup()
 
 void loop()
 {
-  // publishMessage();
-  // client.loop();
   unsigned long currentMillis = millis();
+
   if (currentMillis - previousMillis >= interval)
   {
     previousMillis = currentMillis;
 
-    // testPMS();
     publishMessage();
     client.loop();
-
-    // printLocalTime();
-    // String timestamp = getLocalTimeForDB();
-    // Serial.println("Timestamp for database: " + timestamp);
-    // printLocalTime2();
   }
 
-  // delay(100);
+  // Reset every 1 minute
+  if (currentMillis - previousResetMillis >= resetInterval) {
+    // Save the last time the reset was done
+    previousResetMillis = currentMillis;
+    // Perform the reset
+    Serial.println("Resetting ESP32...");
+    ESP.restart();
+  }
+
 }
