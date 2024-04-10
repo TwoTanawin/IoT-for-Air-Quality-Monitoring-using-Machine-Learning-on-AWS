@@ -1,0 +1,1 @@
+docker run -p 5000:5000 --name ml-app twotanawin/air-quality-flaskapp:0.1
