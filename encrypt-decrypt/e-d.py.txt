@@ -1,0 +1,46 @@
+def mod_inverse(a, m):
+    m0 = m
+    x0, x1 = 0, 1
+
+    if m == 1:
+        return 0
+
+    while a > 1:
+        q = a // m
+        m, a = a % m, m
+        x0, x1 = x1 - q * x0, x0
+
+    if x1 < 0:
+        x1 += m0
+
+    return x1
+
+def encrypt(plaintext, e, n):
+    ciphertext = 1
+    for _ in range(e):
+        ciphertext = (ciphertext * plaintext) % n
+    return ciphertext
+
+def decrypt(ciphertext, d, n):
+    decrypted = 1
+    for _ in range(d):
+        decrypted = (decrypted * ciphertext) % n
+    return decrypted
+
+p = 61
+q = 53
+n = p * q
+phi_n = (p - 1) * (q - 1)
+e = 65537
+d = mod_inverse(e, phi_n)
+
+def main():
+    plaintext = 17
+    ciphertext = encrypt(plaintext, e, n)
+    print("Ciphertext:", ciphertext)
+
+    decrypted = decrypt(ciphertext, d, n)
+    print("Decrypted:", decrypted)
+
+if __name__ == "__main__":
+    main()
