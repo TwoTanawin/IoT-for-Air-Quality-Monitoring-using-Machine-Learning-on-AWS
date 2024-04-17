@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Additional custom styles can be added here */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* Center both horizontally and vertically */
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .box {
+            width: 100%;
+            max-width: 800px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-top: 10px;
+            align-content: center;
+        }
+
+        .prediction-box {
+            /* width: 200px;
+            height: 100px; */
+            padding: 10px;
+            border-radius: 5px;
+            /* margin-left: 100px;
+            margin-right: 100px; */
+            /* border: 2px solid #000; */
+            /* border-radius: 5px; */
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 30px;
+            color: #000;
+            font-weight: bold;
+            margin: 10px;
+            align-items: center;
+        }
+
+        #ml_prediction_container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        padding-left: 20px;
+    }
+
+        #lineChart {
+            width: 100%;
+            /* Removed fixed height for responsiveness */
+            height: 300px;
+            /* Adjust height as needed */
+        }
+
+        .footer {
+            background-color: #333;
+            color: #fff;
+            padding: 5px 0;
+            text-align: center;
+        }
+
+        .circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px;
+            /* border: 2px solid black; */
+            text-align: center;
+            /* Center text horizontally */
+            background-color: lightblue;
+        }
+
+        .circle .text-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font: bold;
+        }
+
+        .circle .text-center p {
+            margin: 0;
+        }
+
+        /* Responsive styles */
+        @media screen and (max-width: 600px) {
+            .circle {
+                width: 50px;
+                height: 50px;
+                /* Adjusted size for smaller screens */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Bootstrap Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#"><strong>Rangsit</strong> Air Pollution: Real-time Air Quality Index (AQI)</a>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="box" id="ml_prediction_container">
+            <h4><strong>Rangsit AQI</strong></h4>
+            <div class="prediction-box" id="ml_prediction_data">
+                <!-- <p>Loading...</p> -->
+                <div id="predictionValue"></div>
+            </div>
+        </div>
+
+        <div class="container mt-5">
+            <div class="box" id="last_data_container">
+                <h4 class="text-center"><strong>AIR Quality Data</strong></h4>
+                <div class="d-flex justify-content-center" id="last_data">
+                    <div class="circle" id="pm1">
+                        <div class="text-center">PM1</div>
+                    </div>
+                    <div class="circle" id="pm25">
+                        <div class="text-center">PM2.5</div>
+                    </div>
+                    <div class="circle" id="pm10">
+                        <div class="text-center">PM10</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box" id="last_10_data_container">
+            <h4><strong>Current Data Last 10 Time</strong></h4>
+            <canvas id="lineChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Bootstrap Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; Developed By Tanawin Mechatronics and Machine Intelligence.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS, Popper.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0"></script>
+
+    <!-- Your JavaScript code here -->
+    <script>
+        async function fetchData(url, containerId) {
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const container = document.getElementById(containerId);
+                container.innerHTML = ''; // Clear previous content
+                if (data.prediction) {
+                    const predictionParagraph = document.createElement('p');
+                    predictionParagraph.textContent = `${data.prediction}`;
+                    container.appendChild(predictionParagraph);
+                } else {
+                    const loadingParagraph = document.createElement('p');
+                    loadingParagraph.textContent = 'Loading...';
+                    container.appendChild(loadingParagraph);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        async function fetchAndDisplayData() {
+            await fetchPrediction(); // Fetch the ML prediction
+            await fetchLastData();
+            await fetchLastTenData();
+        }
+
+        async function fetchPrediction() {
+            try {
+                const response = await fetch('/get_ML_prediction');
+                const data = await response.json();
+                const predictionValueElement = document.getElementById('predictionValue');
+                const predictionBox = document.getElementById('ml_prediction_data');
+
+                if (data.prediction) {
+                    predictionValueElement.textContent = `${data.prediction}`;
+                    predictionBox.style.backgroundColor = getColorForPrediction(data.prediction);
+                } else {
+                    predictionValueElement.textContent = 'No prediction available';
+                    predictionBox.style.backgroundColor = 'black'; // Default color for no prediction
+                }
+            } catch (error) {
+                console.error('Error fetching prediction:', error);
+            }
+        }
+
+        async function fetchLastData() {
+            try {
+                const response = await fetch('/get_last_data');
+                const data = await response.json();
+                const lastDataContainer = document.getElementById('last_data');
+
+                if (data.last_data && data.last_data.length >= 3) {
+                    const pm1 = data.last_data[0];
+                    const pm25 = data.last_data[1];
+                    const pm10 = data.last_data[2];
+
+                    document.getElementById('pm1').innerHTML = `<p text-center>PM1: ${pm1}</p>`;
+                    document.getElementById('pm25').innerHTML = `<p>PM2.5: ${pm25}</p>`;
+                    document.getElementById('pm10').innerHTML = `<p>PM10: ${pm10}</p>`;
+                } else {
+                    lastDataContainer.innerHTML = '<p>No data available</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching last data:', error);
+            }
+        }
+
+        async function fetchLastTenData() {
+            try {
+                const response = await fetch('/get_last_10_data');
+                const data = await response.json();
+                plotChart(data.last_10_data);
+            } catch (error) {
+                console.error('Error fetching last 10 data:', error);
+            }
+        }
+
+        function plotChart(data) {
+            const timestamps = data.map(item => Object.keys(item)[0]); // Extract timestamps
+            const pm1Data = data.map(item => parseInt(item[Object.keys(item)[0]][0]));
+            const pm25Data = data.map(item => parseInt(item[Object.keys(item)[0]][1]));
+            const pm10Data = data.map(item => parseInt(item[Object.keys(item)[0]][2]));
+
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timestamps, // Use timestamps as x-axis labels
+                    datasets: [
+                        {
+                            label: 'PM1',
+                            data: pm1Data,
+                            borderColor: 'red',
+                            fill: false
+                        },
+                        {
+                            label: 'PM2.5',
+                            data: pm25Data,
+                            borderColor: 'blue',
+                            fill: false
+                        },
+                        {
+                            label: 'PM10',
+                            data: pm10Data,
+                            borderColor: 'green',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Timestamp' // Display 'Timestamp' as x-axis label
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'AIR Quality'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
+        function getColorForPrediction(prediction) {
+            switch (prediction) {
+                case "Good":
+                    return "rgb(0, 128, 0)"; // Green
+                case "Moderate":
+                    return "rgb(255, 255, 0)"; // Yellow
+                case "Unhealthy for sensitive":
+                    return "rgb(255, 165, 0)"; // Orange
+                case "Unhealthy":
+                    return "rgb(255, 0, 0)"; // Red
+                case "Hazardous":
+                    return "rgb(128, 0, 128)"; // Purple
+                default:
+                    return "white"; // Default color
+            }
+        }
+
+        window.onload = fetchAndDisplayData;
+    </script>
+</body>
+
+</html>

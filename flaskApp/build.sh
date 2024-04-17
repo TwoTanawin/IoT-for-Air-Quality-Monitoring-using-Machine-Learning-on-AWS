@@ -1,0 +1,1 @@
+docker build -t twotanawin/only-flask-app:0.1 .

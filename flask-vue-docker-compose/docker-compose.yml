@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./flask_app  # specify the context for the Flask app
+      dockerfile: Dockerfile  # assuming your Flask Dockerfile is named Dockerfile
+    image: twotanawin/air-quality-flaskapi:0.5  # custom image name and tag for backend
+    network_mode: "host"  # set the network mode to host
+    environment:
+      - AWS_ACCESS_KEY_ID=YOURKEY
+      - AWS_SECRET_ACCESS_KEY=YOURKEY
+      - AWS_DEFAULT_REGION=YOURREGION
+    depends_on:
+      - frontend  # ensure frontend service is started before backend
+
+  frontend:
+    build:
+      context: ./vue-air-quality-app  # specify the context for the Vue.js app
+      dockerfile: Dockerfile  # assuming your Vue.js Dockerfile is named Dockerfile
+    image: twotanawin/vue-air-quality-app:0.3  # custom image name and tag for frontend
+    network_mode: "host"  # set the network mode to host
+
+
+
